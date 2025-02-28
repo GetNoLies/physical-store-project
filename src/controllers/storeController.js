@@ -1,12 +1,11 @@
 const Store = require('../models/Store');
-const fetch = require('node-fetch');
 const axios = require('axios');
 
 exports.createStore = async (req, res) => {
   try {
     const { name, cep, number } = req.body;
-    const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
-    const addressData = await response.json();
+    const response = await axios.get(`https://viacep.com.br/ws/${cep}/json/`);
+    const addressData = response.data;
 
     if (addressData.erro) {
       return res.status(400).json({ message: 'CEP inválido' });
@@ -32,13 +31,6 @@ exports.createStore = async (req, res) => {
 exports.findStoresByCep = async (req, res) => {
   try {
     const { cep } = req.params;
-    const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
-    const addressData = await response.json();
-
-    if (addressData.erro) {
-      return res.status(400).json({ message: 'CEP inválido' });
-    }
-
     const userCoordinates = await getCoordinates(cep);
 
     const stores = await Store.findAll();
@@ -64,8 +56,8 @@ exports.findStoresByCep = async (req, res) => {
 };
 
 async function getCoordinates(cep) {
-  const response = await fetch(`https://nominatim.openstreetmap.org/search?postalcode=${cep}&country=Brazil&format=json`);
-  const data = await response.json();
+  const response = await axios.get(`https://nominatim.openstreetmap.org/search?postalcode=${cep}&country=Brazil&format=json`);
+  const data = response.data;
   if (data.length > 0) {
     return {
       latitude: parseFloat(data[0].lat),
