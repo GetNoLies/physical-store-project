@@ -12,11 +12,11 @@ const Store = sequelize.define('Store', {
   },
   latitude: {
     type: DataTypes.FLOAT,
-    allowNull: false
+    allowNull: true
   },
   longitude: {
     type: DataTypes.FLOAT,
-    allowNull: false
+    allowNull: true
   }
 });
 
