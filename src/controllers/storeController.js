@@ -1,8 +1,6 @@
 const Store = require('../models/Store');
 const fetch = require('node-fetch');
-const OSRM = require('osrm-client');
-
-const osrm = new OSRM('http://router.project-osrm.org');
+const axios = require('axios');
 
 exports.createStore = async (req, res) => {
   try {
@@ -79,14 +77,10 @@ async function getCoordinates(cep) {
 }
 
 async function calculateRouteDistance(lat1, lon1, lat2, lon2) {
-  const route = await osrm.route({
-    coordinates: [[lon1, lat1], [lon2, lat2]],
-    overview: 'false',
-    steps: false
-  });
-
-  if (route.routes.length > 0) {
-    return route.routes[0].distance / 1000;
+  const response = await axios.get(`http://router.project-osrm.org/route/v1/driving/${lon1},${lat1};${lon2},${lat2}?overview=false`);
+  const data = response.data;
+  if (data.routes.length > 0) {
+    return data.routes[0].distance / 1000;
   } else {
     throw new Error('Rota não encontrada');
   }
