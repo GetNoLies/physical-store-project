@@ -51,13 +51,15 @@ exports.findStoresByCep = async (req, res) => {
       return { ...store.toJSON(), distance, latitude: storeCoordinates.latitude, longitude: storeCoordinates.longitude };
     }));
 
-    storesWithDistance.sort((a, b) => a.distance - b.distance);
+    const storesWithin100km = storesWithDistance.filter(store => store.distance <= 100);
 
-    if (storesWithDistance.length === 0) {
+    storesWithin100km.sort((a, b) => a.distance - b.distance);
+
+    if (storesWithin100km.length === 0) {
       return res.status(404).json({ message: 'Nenhuma loja encontrada próxima ao CEP informado' });
     }
 
-    res.json(storesWithDistance);
+    res.json(storesWithin100km);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
