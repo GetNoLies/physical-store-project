@@ -4,26 +4,6 @@ const fetch = require('node-fetch');
 
 const stores = [
   {
-    name: 'Sams Club Aracaju',
-    address: {
-      cep: '49025100',
-      street: 'Av Deputado Silvio Teixeira',
-      number: '870',
-      city: 'Aracaju',
-      state: 'SE'
-    }
-  },
-  {
-    name: 'Padaria Vera Cruz',
-    address: {
-      cep: '0306400',
-      street: 'Av Celso Garcia',
-      number: '3784',
-      city: 'Tatuapé',
-      state: 'SP'
-    }
-  },
-  {
     name: 'Loja Fictícia A',
     address: {
       cep: '01001000',
@@ -34,71 +14,11 @@ const stores = [
     }
   },
   {
-    name: 'Loja Fictícia A',
+    name: 'Loja Fictícia B',
     address: {
-      cep: '01001000',
-      street: 'Praça da Sé',
-      number: '100',
-      city: 'São Paulo',
-      state: 'SP'
-    }
-  },
-  {
-    name: 'Loja Fictícia A',
-    address: {
-      cep: '01001000',
-      street: 'Praça da Sé',
-      number: '100',
-      city: 'São Paulo',
-      state: 'SP'
-    }
-  },
-  {
-    name: 'Loja Fictícia A',
-    address: {
-      cep: '01001000',
-      street: 'Praça da Sé',
-      number: '100',
-      city: 'São Paulo',
-      state: 'SP'
-    }
-  },
-  {
-    name: 'Loja Fictícia A',
-    address: {
-      cep: '01001000',
-      street: 'Praça da Sé',
-      number: '100',
-      city: 'São Paulo',
-      state: 'SP'
-    }
-  },
-  {
-    name: 'Loja Fictícia A',
-    address: {
-      cep: '01001000',
-      street: 'Praça da Sé',
-      number: '100',
-      city: 'São Paulo',
-      state: 'SP'
-    }
-  },
-  {
-    name: 'Loja Fictícia A',
-    address: {
-      cep: '01001000',
-      street: 'Praça da Sé',
-      number: '100',
-      city: 'São Paulo',
-      state: 'SP'
-    }
-  },
-  {
-    name: 'Loja Fictícia A',
-    address: {
-      cep: '01001000',
-      street: 'Praça da Sé',
-      number: '100',
+      cep: '02002000',
+      street: 'Avenida Paulista',
+      number: '200',
       city: 'São Paulo',
       state: 'SP'
     }
@@ -129,7 +49,7 @@ sequelize.sync({ force: true }).then(async () => {
     }
   }
   await Store.bulkCreate(stores);
-  console.log('Banco de dados populado com sucesso');
+  console.log('Banco de dados populado com os dados fornecidos');
   process.exit();
 }).catch(err => {
   console.error('Erro ao popular o banco de dados:', err);

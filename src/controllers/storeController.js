@@ -40,16 +40,41 @@ exports.findStoresByCep = async (req, res) => {
       return res.status(400).json({ message: 'CEP inválido' });
     }
 
-    const stores = await Store.findAll({
-      where: sequelize.literal(`ST_Distance(location, ST_GeomFromText('POINT(${parseFloat(addressData.longitude)} ${parseFloat(addressData.latitude)})')) <= 100000`)
+    const userLatitude = parseFloat(addressData.latitude);
+    const userLongitude = parseFloat(addressData.longitude);
+
+    const stores = await Store.findAll();
+
+    const storesWithDistance = stores.map(store => {
+      const distance = calculateDistance(userLatitude, userLongitude, store.latitude, store.longitude);
+      return { ...store.toJSON(), distance };
     });
 
-    if (stores.length === 0) {
+    storesWithDistance.sort((a, b) => a.distance - b.distance);
+
+    if (storesWithDistance.length === 0) {
       return res.status(404).json({ message: 'Nenhuma loja encontrada próxima ao CEP informado' });
     }
 
-    res.json(stores);
+    res.json(storesWithDistance);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
+
+function calculateDistance(lat1, lon1, lat2, lon2) {
+  const R = 6371;
+  const dLat = deg2rad(lat2 - lat1);
+  const dLon = deg2rad(lon2 - lon1);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  const distance = R * c;
+  return distance;
+}
+
+function deg2rad(deg) {
+  return deg * (Math.PI / 180);
+}
