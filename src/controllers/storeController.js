@@ -19,9 +19,7 @@ exports.createStore = async (req, res) => {
         number,
         city: addressData.localidade,
         state: addressData.uf
-      },
-      latitude: parseFloat(addressData.latitude),
-      longitude: parseFloat(addressData.longitude)
+      }
     });
 
     res.status(201).json(store);
@@ -40,15 +38,15 @@ exports.findStoresByCep = async (req, res) => {
       return res.status(400).json({ message: 'CEP inválido' });
     }
 
-    const userLatitude = parseFloat(addressData.latitude);
-    const userLongitude = parseFloat(addressData.longitude);
+    const userCoordinates = await getCoordinates(cep);
 
     const stores = await Store.findAll();
 
-    const storesWithDistance = stores.map(store => {
-      const distance = calculateDistance(userLatitude, userLongitude, store.latitude, store.longitude);
-      return { ...store.toJSON(), distance };
-    });
+    const storesWithDistance = await Promise.all(stores.map(async store => {
+      const storeCoordinates = await getCoordinates(store.address.cep);
+      const distance = calculateDistance(userCoordinates.latitude, userCoordinates.longitude, storeCoordinates.latitude, storeCoordinates.longitude);
+      return { ...store.toJSON(), distance, latitude: storeCoordinates.latitude, longitude: storeCoordinates.longitude };
+    }));
 
     storesWithDistance.sort((a, b) => a.distance - b.distance);
 
@@ -61,6 +59,19 @@ exports.findStoresByCep = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
+async function getCoordinates(cep) {
+  const response = await fetch(`https://nominatim.openstreetmap.org/search?postalcode=${cep}&country=Brazil&format=json`);
+  const data = await response.json();
+  if (data.length > 0) {
+    return {
+      latitude: parseFloat(data[0].lat),
+      longitude: parseFloat(data[0].lon)
+    };
+  } else {
+    throw new Error('CEP não encontrado');
+  }
+}
 
 function calculateDistance(lat1, lon1, lat2, lon2) {
   const R = 6371;

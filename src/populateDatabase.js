@@ -1,6 +1,5 @@
 const sequelize = require('./database');
 const Store = require('./models/Store');
-const fetch = require('node-fetch');
 
 const stores = [
   {
@@ -25,31 +24,9 @@ const stores = [
   }
 ];
 
-async function getCoordinates(cep) {
-  const response = await fetch(`https://nominatim.openstreetmap.org/search?postalcode=${cep}&country=Brazil&format=json`);
-  const data = await response.json();
-  if (data.length > 0) {
-    return {
-      latitude: parseFloat(data[0].lat),
-      longitude: parseFloat(data[0].lon)
-    };
-  } else {
-    throw new Error('CEP não encontrado');
-  }
-}
-
 sequelize.sync({ force: true }).then(async () => {
-  for (const store of stores) {
-    try {
-      const { latitude, longitude } = await getCoordinates(store.address.cep);
-      store.latitude = latitude;
-      store.longitude = longitude;
-    } catch (err) {
-      console.error(`Erro ao obter coordenadas para o CEP ${store.address.cep}:`, err);
-    }
-  }
   await Store.bulkCreate(stores);
-  console.log('Banco de dados populado com os dados fornecidos');
+  console.log('Banco de dados populado com os dados inseridos');
   process.exit();
 }).catch(err => {
   console.error('Erro ao popular o banco de dados:', err);
