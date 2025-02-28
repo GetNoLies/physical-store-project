@@ -1,5 +1,8 @@
 const Store = require('../models/Store');
 const fetch = require('node-fetch');
+const OSRM = require('osrm-client');
+
+const osrm = new OSRM('http://router.project-osrm.org');
 
 exports.createStore = async (req, res) => {
   try {
@@ -44,7 +47,7 @@ exports.findStoresByCep = async (req, res) => {
 
     const storesWithDistance = await Promise.all(stores.map(async store => {
       const storeCoordinates = await getCoordinates(store.address.cep);
-      const distance = calculateDistance(userCoordinates.latitude, userCoordinates.longitude, storeCoordinates.latitude, storeCoordinates.longitude);
+      const distance = await calculateRouteDistance(userCoordinates.latitude, userCoordinates.longitude, storeCoordinates.latitude, storeCoordinates.longitude);
       return { ...store.toJSON(), distance, latitude: storeCoordinates.latitude, longitude: storeCoordinates.longitude };
     }));
 
@@ -73,19 +76,16 @@ async function getCoordinates(cep) {
   }
 }
 
-function calculateDistance(lat1, lon1, lat2, lon2) {
-  const R = 6371;
-  const dLat = deg2rad(lat2 - lat1);
-  const dLon = deg2rad(lon2 - lon1);
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) *
-    Math.sin(dLon / 2) * Math.sin(dLon / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  const distance = R * c;
-  return distance;
-}
+async function calculateRouteDistance(lat1, lon1, lat2, lon2) {
+  const route = await osrm.route({
+    coordinates: [[lon1, lat1], [lon2, lat2]],
+    overview: 'false',
+    steps: false
+  });
 
-function deg2rad(deg) {
-  return deg * (Math.PI / 180);
+  if (route.routes.length > 0) {
+    return route.routes[0].distance / 1000;
+  } else {
+    throw new Error('Rota não encontrada');
+  }
 }

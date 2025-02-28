@@ -8,9 +8,10 @@
   },
   "dependencies": {
     "express": "^4.17.1",
+    "node-fetch": "^2.6.1",
+    "osrm-client": "^0.0.4",
     "sequelize": "^6.6.5",
     "sqlite3": "^5.0.2",
-    "winston": "^3.3.3",
-    "node-fetch": "^2.6.1"
+    "winston": "^3.3.3"
   }
 }
