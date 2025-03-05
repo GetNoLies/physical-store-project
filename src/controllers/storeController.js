@@ -1,5 +1,6 @@
 const Store = require('../models/Store');
 const axios = require('axios');
+const logger = require('../logger');
 
 exports.createStore = async (req, res) => {
   try {
@@ -24,6 +25,7 @@ exports.createStore = async (req, res) => {
 
     res.status(201).json(store);
   } catch (err) {
+    logger.error('Erro ao criar loja: %o', err);
     res.status(500).json({ message: err.message });
   }
 };
@@ -51,29 +53,40 @@ exports.findStoresByCep = async (req, res) => {
 
     res.json(storesWithin100km);
   } catch (err) {
+    logger.error('Erro ao buscar lojas por CEP: %o', err);
     res.status(500).json({ message: err.message });
   }
 };
 
 async function getCoordinates(cep) {
-  const response = await axios.get(`https://nominatim.openstreetmap.org/search?postalcode=${cep}&country=Brazil&format=json`);
-  const data = response.data;
-  if (data.length > 0) {
-    return {
-      latitude: parseFloat(data[0].lat),
-      longitude: parseFloat(data[0].lon)
-    };
-  } else {
-    throw new Error('CEP não encontrado');
+  try {
+    const response = await axios.get(`https://nominatim.openstreetmap.org/search?postalcode=${cep}&country=Brazil&format=json`);
+    const data = response.data;
+    if (data.length > 0) {
+      return {
+        latitude: parseFloat(data[0].lat),
+        longitude: parseFloat(data[0].lon)
+      };
+    } else {
+      throw new Error('CEP não encontrado');
+    }
+  } catch (error) {
+    logger.error('Erro ao buscar coordenadas: %o', error);
+    throw new Error('Erro ao buscar coordenadas: ' + error.message);
   }
 }
 
 async function calculateRouteDistance(lat1, lon1, lat2, lon2) {
-  const response = await axios.get(`http://router.project-osrm.org/route/v1/driving/${lon1},${lat1};${lon2},${lat2}?overview=false`);
-  const data = response.data;
-  if (data.routes.length > 0) {
-    return data.routes[0].distance / 1000;
-  } else {
-    throw new Error('Rota não encontrada');
+  try {
+    const response = await axios.get(`http://router.project-osrm.org/route/v1/driving/${lon1},${lat1};${lon2},${lat2}?overview=false`);
+    const data = response.data;
+    if (data.routes.length > 0) {
+      return data.routes[0].distance / 1000;
+    } else {
+      throw new Error('Rota não encontrada');
+    }
+  } catch (error) {
+    logger.error('Erro ao calcular a rota: %o', error);
+    throw new Error('Erro ao calcular a rota: ' + error.message);
   }
 }

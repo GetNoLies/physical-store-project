@@ -13,6 +13,6 @@
     "osrm-client": "^0.0.4",
     "sequelize": "^6.6.5",
     "sqlite3": "^5.0.2",
-    "winston": "^3.3.3"
+    "winston": "^3.17.0"
   }
 }
