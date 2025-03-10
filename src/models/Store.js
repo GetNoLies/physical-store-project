@@ -9,14 +9,6 @@ const Store = sequelize.define('Store', {
   address: {
     type: DataTypes.JSON,
     allowNull: false
-  },
-  latitude: {
-    type: DataTypes.FLOAT,
-    allowNull: true
-  },
-  longitude: {
-    type: DataTypes.FLOAT,
-    allowNull: true
   }
 });
 
