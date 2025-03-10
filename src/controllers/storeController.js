@@ -2,6 +2,8 @@ const Store = require('../models/Store');
 const axios = require('axios');
 const logger = require('../logger');
 
+const ORS_API_KEY = "5b3ce3597851110001cf62484df37b8915bf4a48a3d451ee6eb80b7b";
+
 exports.createStore = async (req, res) => {
   try {
     const { name, cep, number } = req.body;
@@ -60,12 +62,19 @@ exports.findStoresByCep = async (req, res) => {
 
 async function getCoordinates(cep) {
   try {
-    const response = await axios.get(`https://nominatim.openstreetmap.org/search?postalcode=${cep}&country=Brazil&format=json`);
+    const response = await axios.get(`https://api.openrouteservice.org/geocode/search`, {
+      params: {
+        api_key: ORS_API_KEY,
+        text: cep,
+        boundary_country: 'BR'
+      }
+    });
     const data = response.data;
-    if (data.length > 0) {
+    if (data.features.length > 0) {
+      const location = data.features[0].geometry.coordinates;
       return {
-        latitude: parseFloat(data[0].lat),
-        longitude: parseFloat(data[0].lon)
+        latitude: location[1],
+        longitude: location[0]
       };
     } else {
       throw new Error('CEP não encontrado');
