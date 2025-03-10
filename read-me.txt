@@ -1,6 +1,6 @@
 # Physical Store
 
-Este projeto consiste no desenvolvimento de uma **Physical Store**, que permite a busca de lojas físicas associadas a um e-commerce, utilizando **Node.js** com **JavaScript ou TypeScript**.
+Este projeto consiste no desenvolvimento de uma **Physical Store**, que permite a busca de lojas físicas associadas a um e-commerce, utilizando **Node.js** com **JavaScript**
 
 ## 📌 Funcionalidades
 
