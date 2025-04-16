@@ -1,5 +1,6 @@
-import { Controller, Get, Param, Query } from '@nestjs/common';
+import { Controller, Get, Post, Param, Query, Body } from '@nestjs/common';
 import { StoreService } from './store.service';
+import { Store } from './store.entity';
 
 @Controller('stores')
 export class StoreController {
@@ -23,5 +24,10 @@ export class StoreController {
   @Get('by-state')
   storeByState(@Query('state') state: string) {
     return this.storeService.findByState(state);
+  }
+
+  @Post()
+  async createStore(@Body() storeData: Partial<Store>) {
+    return this.storeService.createStoreWithAddress(storeData);
   }
 }

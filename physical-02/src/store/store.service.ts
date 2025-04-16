@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Store } from './store.entity';
-import { CepService } from './cep.service';
+import { CepService, CepInfo } from './cep.service';
 import { HttpService } from '@nestjs/axios';
 import { lastValueFrom } from 'rxjs';
 
@@ -24,42 +24,112 @@ export class StoreService {
   }
 
   async findByCep(cep: string) {
+    // Buscar informações do CEP
     const cepInfo = await this.cepService.getCepInfo(cep);
-    const { latitude: cepLat, longitude: cepLng } = cepInfo;
 
-    const stores = await this.storeRepository.find();
+    // Buscar apenas lojas do tipo PDV
+    const pdvs = await this.storeRepository.find({ where: { type: 'PDV' } });
 
-    const nearbyStores: { store: Store; distance: number }[] = [];
-    for (const store of stores) {
+    let nearestPdv: Store | null = null;
+    let nearestDistance = Infinity;
+
+    const nearbyStores: any[] = [];
+    for (const pdv of pdvs) {
+      // Calcular a distância entre o CEP fornecido e o PDV usando a API OSRM
       const distance = await this.getDistanceFromOSRM(
-        cepLat,
-        cepLng,
-        parseFloat(store.latitude),
-        parseFloat(store.longitude),
+        parseFloat(pdv.latitude),
+        parseFloat(pdv.longitude),
+        parseFloat(pdv.latitude),
+        parseFloat(pdv.longitude),
       );
 
       if (distance <= 50000) {
         nearbyStores.push({
-          store,
-          distance: distance / 1000,
+          name: pdv.storeName,
+          city: pdv.city,
+          postalCode: pdv.postalCode,
+          type: 'PDV',
+          distance: `${(distance / 1000).toFixed(1)} km`,
+          value: [
+            {
+              prazo: `${pdv.shippingTimeInDays} dias úteis`,
+              price: 'R$ 15,00',
+              description: 'Motoboy',
+            },
+          ],
         });
+      }
+
+      // Identificar o PDV mais próximo
+      if (distance < nearestDistance) {
+        nearestDistance = distance;
+        nearestPdv = pdv;
       }
     }
 
-    if (nearbyStores.length > 0) {
-      return nearbyStores.map((nearbyStore) => ({
-        store: nearbyStore.store,
-        distance: nearbyStore.distance,
-        shippingCost: 15,
-        shippingTime: nearbyStore.store.shippingTimeInDays,
-      }));
-    } else {
-      const freight = await this.calculateFreight(cep);
-      return {
-        message: 'Nenhuma loja próxima encontrada. Será entregue pela Loja Online.',
-        freight,
-      };
+    // Caso não haja PDVs próximos, calcular frete com base na loja online (LOJA)
+    const onlineStore = await this.storeRepository.findOne({ where: { type: 'LOJA' } });
+    if (onlineStore) {
+      const freight = await this.calculateFreight(cep, nearestPdv?.postalCode || '01001000'); // Usar o CEP do PDV mais próximo ou um CEP padrão
+      nearbyStores.push({
+        name: onlineStore.storeName,
+        city: onlineStore.city,
+        postalCode: onlineStore.postalCode,
+        type: 'LOJA',
+        distance: 'N/A', // Distância não calculada para lojas online
+        value: freight.map((f: any) => ({
+          prazo: `${f.delivery_time} dias úteis`,
+          codProdutoAgencia: f.product_code,
+          price: `R$ ${f.price.toFixed(2)}`,
+          description: f.description,
+        })),
+      });
     }
+
+    // Criar pins para o mapa
+    const pins = pdvs.map((pdv) => ({
+      position: {
+        lat: parseFloat(pdv.latitude),
+        lng: parseFloat(pdv.longitude),
+      },
+      title: pdv.storeName,
+    }));
+
+    return {
+      stores: nearbyStores,
+      pins,
+    };
+  }
+
+  async createStoreWithAddress(storeData: Partial<Store>) {
+    // Verificar se o tipo é PDV e se o postalCode está definido
+    if (storeData.type === 'PDV' && !storeData.postalCode) {
+      throw new Error('O campo postalCode é obrigatório para lojas do tipo PDV.');
+    }
+
+    // Buscar informações do endereço com base no CEP, se o postalCode estiver definido
+    let cepInfo: CepInfo | null = null;
+    if (storeData.postalCode) {
+      try {
+        cepInfo = await this.cepService.getCepInfo(storeData.postalCode);
+      } catch (error) {
+        throw new Error('Não foi possível buscar informações do CEP. Verifique se o CEP é válido.');
+      }
+    }
+
+    // Preencher os campos de endereço automaticamente, com valores padrão para evitar erros
+    const newStore = this.storeRepository.create({
+      ...storeData,
+      address1: cepInfo?.logradouro || 'Endereço não informado',
+      address2: storeData.address2 || '', // Complemento opcional
+      address3: cepInfo?.bairro || 'Bairro não informado',
+      city: cepInfo?.localidade || 'Cidade não informada',
+      state: cepInfo?.uf || 'Estado não informado',
+      country: 'Brasil', // País fixo
+    });
+
+    // Salvar a loja no banco de dados
+    return this.storeRepository.save(newStore);
   }
 
   findByState(state: string) {
@@ -78,19 +148,19 @@ export class StoreService {
     const routes = response.data.routes;
 
     if (routes && routes.length > 0) {
-      return routes[0].distance;
+      return routes[0].distance; // Distância em metros
     }
 
     throw new Error('Não foi possível calcular a distância.');
   }
 
-  private async calculateFreight(cep: string) {
+  private async calculateFreight(destinationCep: string, originCep: string) {
     const response = await lastValueFrom(
       this.httpService.post(
         'https://melhorenvio.com.br/api/v2/me/shipment/calculate',
         {
-          from: { postal_code: '01001000' },
-          to: { postal_code: cep },
+          from: { postal_code: originCep },
+          to: { postal_code: destinationCep },
           products: [{ weight: 1, width: 10, height: 10, length: 10, quantity: 1 }],
           services: '1',
         },
