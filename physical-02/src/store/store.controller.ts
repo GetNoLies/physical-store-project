@@ -7,8 +7,8 @@ export class StoreController {
   constructor(private readonly storeService: StoreService) {}
 
   @Get()
-  listAll() {
-    return this.storeService.findAll();
+  listAll(@Query('limit') limit: number = 10, @Query('offset') offset: number = 0) {
+    return this.storeService.listAll(limit, offset);
   }
 
   @Get(':id')
@@ -17,13 +17,13 @@ export class StoreController {
   }
 
   @Get('by-cep/:cep')
-  storeByCep(@Param('cep') cep: string) {
-    return this.storeService.findByCep(cep);
+  storeByCep(@Param('cep') cep: string, @Query('limit') limit: number = 10, @Query('offset') offset: number = 0) {
+    return this.storeService.findByCep(cep, limit, offset);
   }
 
-  @Get('by-state')
-  storeByState(@Query('state') state: string) {
-    return this.storeService.findByState(state);
+  @Get('by-state/:state')
+  storeByState(@Param('state') state: string, @Query('limit') limit: number = 10, @Query('offset') offset: number = 0) {
+    return this.storeService.findByState(state, limit, offset);
   }
 
   @Post()

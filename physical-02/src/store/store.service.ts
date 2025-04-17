@@ -15,22 +15,43 @@ export class StoreService {
     private readonly httpService: HttpService,
   ) {}
 
-  findAll() {
-    return this.storeRepository.find();
+  async listAll(limit: number = 10, offset: number = 0) {
+    const [stores, total] = await this.storeRepository.findAndCount({
+      skip: offset,
+      take: limit,
+    });
+
+    return {
+      stores,
+      limit,
+      offset,
+      total,
+    };
   }
 
-  findById(id: string) {
-    return this.storeRepository.findOne({ where: { storeID: id } });
+  async findById(id: string) {
+    const store = await this.storeRepository.findOne({ where: { storeID: id } });
+
+    if (!store) {
+      throw new Error('Store not found');
+    }
+
+    return {
+      stores: [store],
+      limit: 1,
+      offset: 0,
+      total: 1,
+    };
   }
 
-  async findByCep(cep: string) {
+  async findByCep(cep: string, limit: number = 10, offset: number = 0) {
     const { latitude: cepLat, longitude: cepLng } = await this.cepService.getCoordinatesFromCep(cep);
-  
+
     const pdvs = await this.storeRepository.find({ where: { type: 'PDV' } });
-  
+
     let nearestPdv: Store | null = null;
     let nearestDistance = Infinity;
-  
+
     const nearbyStores: any[] = [];
     for (const pdv of pdvs) {
       const distance = await this.getDistanceFromOSRM(
@@ -39,7 +60,7 @@ export class StoreService {
         parseFloat(pdv.latitude),
         parseFloat(pdv.longitude),
       );
-  
+
       if (distance <= 50000) {
         nearbyStores.push({
           name: pdv.storeName,
@@ -56,13 +77,13 @@ export class StoreService {
           ],
         });
       }
-  
+
       if (distance < nearestDistance) {
         nearestDistance = distance;
         nearestPdv = pdv;
       }
     }
-  
+
     const onlineStore = await this.storeRepository.findOne({ where: { type: 'LOJA' } });
     if (onlineStore) {
       const onlineStoreDistance = await this.getDistanceFromOSRM(
@@ -71,9 +92,9 @@ export class StoreService {
         parseFloat(onlineStore.latitude),
         parseFloat(onlineStore.longitude),
       );
-  
+
       const freight = await this.calculateFreight(cep, nearestPdv?.postalCode || '49030600');
-  
+
       if (Array.isArray(freight)) {
         nearbyStores.push({
           name: onlineStore.storeName,
@@ -101,7 +122,7 @@ export class StoreService {
         throw new Error('O cálculo de frete retornou um formato inesperado.');
       }
     }
-  
+
     const pins = pdvs.map((pdv) => ({
       position: {
         lat: parseFloat(pdv.latitude),
@@ -109,10 +130,30 @@ export class StoreService {
       },
       title: pdv.storeName,
     }));
-  
+
+    const paginatedStores = nearbyStores.slice(offset, offset + limit);
+
     return {
-      stores: nearbyStores,
+      stores: paginatedStores,
       pins,
+      limit,
+      offset,
+      total: nearbyStores.length,
+    };
+  }
+
+  async findByState(state: string, limit: number = 10, offset: number = 0) {
+    const [stores, total] = await this.storeRepository.findAndCount({
+      where: { state },
+      skip: offset,
+      take: limit,
+    });
+
+    return {
+      stores,
+      limit,
+      offset,
+      total,
     };
   }
 
@@ -154,10 +195,6 @@ export class StoreService {
     });
 
     return this.storeRepository.save(newStore);
-  }
-
-  findByState(state: string) {
-    return this.storeRepository.find({ where: { state } });
   }
 
   private async getDistanceFromOSRM(
@@ -204,7 +241,7 @@ export class StoreService {
         services: ["1", "2"],
         validate: true,
       };
-  
+
       const response = await lastValueFrom(
         this.httpService.post(
           'https://melhorenvio.com.br/api/v2/me/shipment/calculate',
@@ -218,13 +255,13 @@ export class StoreService {
           },
         ),
       );
-  
+
       const filteredServices = response.data.filter((service: any) =>
         service.name.toLowerCase() === 'pac' || service.name.toLowerCase() === 'sedex',
       );
-  
+
       console.log('Filtered Freight Response:', filteredServices);
-  
+
       return filteredServices;
     } catch (error) {
       console.error('Erro ao calcular o frete:', error.message);
