@@ -215,14 +215,14 @@ export class StoreService {
     throw new Error('Não foi possível calcular a distância.');
   }
 
-  private async calculateFreight(destinationCep: string, originCep: string) {
+  public async calculateFreight(destinationCep: string, originCep: string) {
     try {
       const payload = {
         from: { postal_code: originCep },
         to: { postal_code: destinationCep },
         products: [
           {
-            id: "1",
+            id: '1',
             width: 15,
             height: 10,
             length: 20,
@@ -238,7 +238,7 @@ export class StoreService {
           reverse: false,
           non_commercial: true,
         },
-        services: ["1", "2"],
+        services: ['1', '2'],
         validate: true,
       };
 
