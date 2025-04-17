@@ -87,6 +87,13 @@ export class StoreService {
             price: f.price ? `R$ ${parseFloat(f.price).toFixed(2)}` : 'Preço não disponível',
             company: f.company?.name || 'Empresa não disponível',
             delivery_time: f.delivery_time ? `${f.delivery_time} dias úteis` : 'N/A dias úteis',
+            codProdutoAgencia: f.product_code || 'N/A',
+            description:
+              f.name.toLowerCase() === 'pac'
+                ? 'PAC é a encomenda econômica dos Correios'
+                : f.name.toLowerCase() === 'sedex'
+                ? 'SEDEX é a encomenda expressa dos Correios'
+                : 'Descrição não disponível',
           })),
         });
       } else {
