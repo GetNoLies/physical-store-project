@@ -50,7 +50,6 @@ Automatizar o controle de uma loja física com funcionalidades como:
 1. Clone o projeto:
 
 git clone https://github.com/GetNoLies/physical-store-project.git
-cd physical-store-project/physical-02
 
 2. Instale as dependências:
 
@@ -59,30 +58,6 @@ npm install
 3. Rode o servidor em modo desenvolvimento:
 
 npm run start:dev
-
-📜 Scripts disponíveis
-
-Comando	      Descrição
-start:dev	  Inicia o servidor em modo dev
-test	      Roda todos os testes automatizados
-lint	      Executa o ESLint
-format	      Formata o código com Prettier
-
-📂 Estrutura de Pastas
-
-physical-02/
-│
-├── src/                     # Código-fonte principal
-│   ├── modules/             # Módulos da aplicação (ex: produtos)
-│   ├── database/            # Configuração do banco
-│   └── main.ts              # Arquivo de entrada
-│
-├── test/                    # Testes automatizados
-├── database.sqlite          # Banco de dados local
-├── package.json             # Configurações e scripts
-├── tsconfig.json            # Configurações TypeScript
-├── .eslintrc.js             # Configuração do ESLint
-└── .prettierrc              # Configuração do Prettier
 
 ✅ Funcionalidades
 
