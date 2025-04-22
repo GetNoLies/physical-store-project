@@ -6,6 +6,7 @@ import { Store } from './store.entity';
 import { CepService } from './cep.service';
 import { HttpService } from '@nestjs/axios';
 import { Repository } from 'typeorm';
+import { CreateStoreDto, UpdateStoreDto } from './dto/store.dto';
 
 describe('StoreController', () => {
   let controller: StoreController;
@@ -157,7 +158,7 @@ describe('StoreController', () => {
 
   describe('createStore', () => {
     it('should create a new store', async () => {
-      const storeData = {
+      const storeData: CreateStoreDto = {
         storeName: 'New Store',
         postalCode: '01001-000',
         type: 'PDV',
@@ -172,23 +173,64 @@ describe('StoreController', () => {
 
       jest.spyOn(service, 'createStoreWithAddress').mockResolvedValue(mockResult);
 
-      expect(await controller.createStore(storeData as Partial<Store>)).toBe(mockResult);
+      expect(await controller.createStore(storeData)).toBe(mockResult);
       expect(service.createStoreWithAddress).toHaveBeenCalledWith(storeData);
     });
 
     it('should handle errors during store creation', async () => {
-      const storeData = {
+      const storeData: CreateStoreDto = {
         storeName: 'New Store',
         type: 'PDV',
+        postalCode: '',
       };
 
       jest.spyOn(service, 'createStoreWithAddress').mockRejectedValue(
         new Error('O campo postalCode é obrigatório para lojas do tipo PDV.')
       );
       
-      await expect(controller.createStore(storeData as Partial<Store>)).rejects.toThrow(
+      await expect(controller.createStore(storeData)).rejects.toThrow(
         'O campo postalCode é obrigatório para lojas do tipo PDV.'
       );
+    });
+  });
+
+  describe('updateStore', () => {
+    it('should update an existing store', async () => {
+      const storeId = '1';
+      const updateData: UpdateStoreDto = {
+        storeName: 'Updated Store Name',
+      };
+
+      const mockResult = {
+        stores: [createMockStore({
+          storeID: storeId,
+          storeName: 'Updated Store Name',
+        })],
+        limit: 1,
+        offset: 0,
+        total: 1,
+      };
+
+      jest.spyOn(service, 'updateStore').mockResolvedValue(mockResult);
+
+      expect(await controller.updateStore(storeId, updateData)).toBe(mockResult);
+      expect(service.updateStore).toHaveBeenCalledWith(storeId, updateData);
+    });
+  });
+
+  describe('deleteStore', () => {
+    it('should delete a store', async () => {
+      const storeId = '1';
+      const mockResult = {
+        success: true,
+        message: 'Loja Store 1 excluída com sucesso',
+        deletedId: storeId
+      };
+
+      jest.spyOn(service, 'deleteStore').mockResolvedValue(mockResult);
+
+      expect(await controller.deleteStore(storeId)).toBe(mockResult);
+      expect(service.deleteStore).toHaveBeenCalledWith(storeId);
     });
   });
 });

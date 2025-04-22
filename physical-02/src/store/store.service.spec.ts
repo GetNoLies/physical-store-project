@@ -13,8 +13,15 @@ describe('StoreService', () => {
   let repository: Repository<Store>;
   let cepService: CepService;
   let httpService: HttpService;
+  
+  const originalEnv = process.env;
 
   beforeEach(async () => {
+    process.env = {
+      ...originalEnv,
+      MELHOR_ENVIO_TOKEN: 'test-token',
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         StoreService,
@@ -43,6 +50,10 @@ describe('StoreService', () => {
     repository = module.get<Repository<Store>>(getRepositoryToken(Store));
     cepService = module.get<CepService>(CepService);
     httpService = module.get<HttpService>(HttpService);
+  });
+
+  afterEach(() => {
+    process.env = originalEnv;
   });
 
   describe('calculateFreight', () => {
@@ -81,7 +92,7 @@ describe('StoreService', () => {
       const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
 
       await expect(service.calculateFreight('01001-000', '20040-030')).rejects.toThrow(
-        'Não foi possível calcular o frete. Tente novamente.',
+        'Não foi possível calcular o frete. Tente novamente.'
       );
 
       consoleSpy.mockRestore();
@@ -102,6 +113,14 @@ describe('StoreService', () => {
 
       const result = await service.calculateFreight('01001-000', '20040-030');
       expect(result).toEqual([]);
+    });
+
+    it('should throw specific error for missing token', async () => {
+      process.env.MELHOR_ENVIO_TOKEN = '';
+      
+      await expect(service.calculateFreight('01001-000', '20040-030')).rejects.toThrow(
+        'Erro de configuração do serviço de frete. Entre em contato com o suporte.'
+      );
     });
   });
 

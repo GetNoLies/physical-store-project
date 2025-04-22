@@ -10,8 +10,9 @@ async function bootstrap() {
 
   const config = new DocumentBuilder()
     .setTitle('Physical Store API')
-    .setDescription('API para gerenciamento de lojas e fretes')
+    .setDescription('API para gerenciamento de lojas físicas e cálculo de fretes')
     .setVersion('1.0')
+    .addTag('stores', 'Operações relacionadas a lojas físicas')
     .build();
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);
