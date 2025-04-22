@@ -33,7 +33,6 @@ export class CepService {
   }
 
   async getCoordinatesFromCep(cep: string): Promise<{ latitude: number; longitude: number }> {
-    // Validação do formato do CEP
     if (!/^\d{8}$/.test(cep)) {
       throw new Error('O CEP fornecido é inválido. Certifique-se de que ele contém 8 dígitos.');
     }
